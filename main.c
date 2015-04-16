@@ -61,6 +61,8 @@ int main(int argc, char** argv) {
 	}
 	signal(SIGUSR1, &store_signum);
 	signal(SIGINT, &store_signum);
+	signal(SIGPIPE, SIG_IGN);
+
 	global.worker =
 			malloc(sizeof(WorkerContext) * global.config.thread_count);
 	for (int i = 0; i < global.config.thread_count; ++i) {

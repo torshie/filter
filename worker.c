@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include "log.h"
 #include "list.h"
@@ -9,6 +10,7 @@
 #include "engine.h"
 #include "common.h"
 #include "smm/actypes.h"
+#include "protocol.h"
 
 static Engine* get_match_engine(WorkerContext* context) {
 	if (context->newer->serial > context->current->serial) {
@@ -19,9 +21,10 @@ static Engine* get_match_engine(WorkerContext* context) {
 }
 
 static void send_result(int client, List* result) {
-	char buffer[1024];
-	buffer[0] = '0';
-	buffer[1] = '\n';
+	PROTOCOL_HEADER resp;
+	resp.Command = CMD_RESULT;
+
+	char* buffer = malloc(1024);
 
 	int offset = 2;
 	do {
@@ -38,17 +41,29 @@ static void send_result(int client, List* result) {
 
 			result = result->next;
 		}
-		write(client, buffer, offset);
 		offset = 0;
 	} while (result != NULL);
-	write(client, "\n", 1);
+	write(client, &resp, sizeof(PROTOCOL_HEADER));
+	write(client, buffer, resp.Length);
+}
+
+static void send_error(int client, char* message, int length)
+{
+	PROTOCOL_HEADER resp;
+	resp.Command = CMD_ERROR;
+	resp.Length = length;
+
+	write(client, &resp, sizeof(PROTOCOL_HEADER));
+	write(client, message, length);
 }
 
 static void serve_client(int client, WorkerContext* context) {
 	Engine* engine = get_match_engine(context);
-	AC_ALPHABET_t text[1024];
+	PROTOCOL_HEADER req;
+	int n;
 	for (;;) {
-		int n = read(client, text, sizeof(text));
+		n = read(client, &req, sizeof(PROTOCOL_HEADER));
+
 		if (n < 0) {
 			log_error("failed to read data from client: %s",
 					strerror(errno));
@@ -56,11 +71,23 @@ static void serve_client(int client, WorkerContext* context) {
 		} else if (n == 0) {
 			break;
 		}
-		engine_feed_text(engine, text, n / sizeof(text[0]));
-	};
 
-	List* result = engine_get_result(engine);
-	send_result(client, result);
+		if (req.Command != CMD_TEST) {
+			send_error(client, "Bad command!", 12);
+			return ;
+		}
+
+		AC_ALPHABET_t text[req.Length];
+
+		// TODO: read ...
+		n = read(client, text, req.Length);
+
+		//engine_feed_text(engine, text, n / sizeof(text[0]));
+		engine_feed_text(engine, text, req.Length);
+
+		List* result = engine_get_result(engine);
+		send_result(client, result);
+	};
 }
 
 void* match_thread(void* p) {
