@@ -15,6 +15,12 @@ typedef struct {
 #define PROTOCOL_HEADER_LENGTH 5
 #define MAX_DATA_LENGTH 0xFFFF
 
+typedef struct {
+    unsigned short StartPos;
+    unsigned short Length;
+} RESULT_PAIR;
+#define RESULT_PAIR_LENGTH 4
+
 enum {
     CMD_NONE,
     CMD_TEST,

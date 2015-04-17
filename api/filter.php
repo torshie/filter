@@ -98,7 +98,21 @@ class filter
         }
         if ($p['len']) {
             $result = fread($this->fp, $p['len']);
-            var_dump($result);
+
+        for($i=0; isset($result[$i]); $i++) {
+            printf("%02x\t%d\n", ord($result[$i]), ord($result[$i]));
+        }
+            $pair_length = 4;
+            $start_pos = 0;
+            $result_pairs = array();
+
+            do {
+                $result_pairs[] = unpack("vpos/vlen", substr($result, $start_pos, $pair_length));
+                $start_pos += $pair_length;
+
+            } while(isset($result[$start_pos]));
+
+            var_dump($result_pairs);
         }
 
     }

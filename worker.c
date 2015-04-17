@@ -28,26 +28,25 @@ static void send_result(int client, List* result) {
 	resp.Length = 0;
 
 	char buffer[MAX_DATA_LENGTH+1] = {'\0'};
+	RESULT_PAIR rp;
 
-	int offset = 2;
+	int offset = 0;
 	do {
 		while (offset + 32 < (int)sizeof(buffer) && result != NULL) {
-			int size = int_to_dec(FLT_LIST_GET(result, int)[0],
-					buffer + offset);
-			buffer[offset + size] = ' ';
-			offset += size + 1;
-			resp.Length += size + 1;
+			rp.StartPos = FLT_LIST_GET(result, int)[0];
+			rp.Length = FLT_LIST_GET(result, int)[1];
+			rp.StartPos -= rp.Length;
+			memcpy(buffer+offset, &rp, RESULT_PAIR_LENGTH);
+			log_info("Size of rp=%d, struct=%d", sizeof(rp), sizeof(RESULT_PAIR));
 
-			size = int_to_dec(FLT_LIST_GET(result, int)[1],
-					buffer + offset);
-			buffer[offset + size] = ' ';
-			offset += size + 1;
-			resp.Length += size + 1;
+			offset += RESULT_PAIR_LENGTH;
 
 			result = result->next;
 		}
-		offset = 0;
+
 	} while (result != NULL);
+	resp.Length = offset;
+	log_info("Result data length=%d", resp.Length);
 
 	write(client, &resp, PROTOCOL_HEADER_LENGTH);
 	write(client, buffer, resp.Length);
