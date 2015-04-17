@@ -5,15 +5,18 @@
 #ifndef FILTER_PROTOCOL_H
 #define FILTER_PROTOCOL_H
 
+
+#define PROTOCOL_HEADER_LENGTH 6
+#define MAX_DATA_LENGTH 0xFFFF
+#define PROTOCOL_VERSION 1
+
 typedef struct {
+    unsigned char Version;
     unsigned char Command;
     unsigned short Flag;
     unsigned short Length;
 
 } PROTOCOL_HEADER;
-
-#define PROTOCOL_HEADER_LENGTH 5
-#define MAX_DATA_LENGTH 0xFFFF
 
 typedef struct {
     unsigned short StartPos;

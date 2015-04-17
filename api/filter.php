@@ -9,6 +9,11 @@ class filter
     const CMD_DELETE = 4;
     const CMD_ERROR=255;
 
+    const VERSION = 1;
+    const HEADER_LENGTH = 6;
+
+    const RESULT_PAIR_LENGTH = 4;
+
     protected $host;
     protected $port;
 
@@ -65,14 +70,10 @@ class filter
             throw new Exception("bad length", 1);
         }
 
-        $packet = chr(self::CMD_TEST);
-        $packet .= pack('n', 0);                # flag
-        $packet .= pack('n', strlen($text));    # big endian
+        $packet = pack('CC', self::VERSION, self::CMD_TEST);
+        $packet .= pack('v', 0);                # flag
+        $packet .= pack('v', strlen($text));    # big endian
         $packet .= $text;
-
-        for($i=0; isset($packet[$i]); $i++) {
-            printf("%02x\t%d\n", ord($packet[$i]), ord($packet[$i]));
-        }
 
         # socket write
         $r = fwrite($this->fp, $packet);
@@ -80,11 +81,11 @@ class filter
         if (!$r) {
             throw new filterException("write failed", 100004);
         }
-        echo "{$r} bytes written\n";
+        #echo "{$r} bytes written\n";
 
-        $s = fread($this->fp, 5);
-        $p = unpack("Ccommand/nflag/nlen", $s);
-        echo "Command = {$p['command']} Length={$p['len']} Flags={$p['flag']}\n";
+        $s = fread($this->fp, self::HEADER_LENGTH);
+        $p = unpack("Cversion/Ccommand/vflag/vlen", $s);
+        #echo "Command = {$p['command']} Length={$p['len']} Flags={$p['flag']}\n";
 
         if ($p['command'] != self::CMD_RESULT) {
             if ($p['command'] == self::CMD_ERROR) {
@@ -99,10 +100,7 @@ class filter
         if ($p['len']) {
             $result = fread($this->fp, $p['len']);
 
-        for($i=0; isset($result[$i]); $i++) {
-            printf("%02x\t%d\n", ord($result[$i]), ord($result[$i]));
-        }
-            $pair_length = 4;
+            $pair_length = self::RESULT_PAIR_LENGTH;
             $start_pos = 0;
             $result_pairs = array();
 

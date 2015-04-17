@@ -24,6 +24,7 @@ static void send_result(int client, List* result) {
 	log_info("Sending results");
 
 	PROTOCOL_HEADER resp;
+	resp.Version = PROTOCOL_VERSION;
 	resp.Command = CMD_RESULT;
 	resp.Length = 0;
 
@@ -55,6 +56,7 @@ static void send_result(int client, List* result) {
 static void send_error(int client, char* message, int length)
 {
 	PROTOCOL_HEADER resp;
+	resp.Version = PROTOCOL_VERSION;
 	resp.Command = CMD_ERROR;
 	resp.Length = length;
 
