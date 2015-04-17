@@ -21,10 +21,13 @@ static Engine* get_match_engine(WorkerContext* context) {
 }
 
 static void send_result(int client, List* result) {
+	log_info("Sending results");
+
 	PROTOCOL_HEADER resp;
 	resp.Command = CMD_RESULT;
+	resp.Length = 0;
 
-	char* buffer = malloc(1024);
+	char buffer[MAX_DATA_LENGTH+1] = {'\0'};
 
 	int offset = 2;
 	do {
@@ -33,17 +36,20 @@ static void send_result(int client, List* result) {
 					buffer + offset);
 			buffer[offset + size] = ' ';
 			offset += size + 1;
+			resp.Length += size + 1;
 
 			size = int_to_dec(FLT_LIST_GET(result, int)[1],
 					buffer + offset);
 			buffer[offset + size] = ' ';
 			offset += size + 1;
+			resp.Length += size + 1;
 
 			result = result->next;
 		}
 		offset = 0;
 	} while (result != NULL);
-	write(client, &resp, sizeof(PROTOCOL_HEADER));
+
+	write(client, &resp, PROTOCOL_HEADER_LENGTH);
 	write(client, buffer, resp.Length);
 }
 
@@ -53,7 +59,7 @@ static void send_error(int client, char* message, int length)
 	resp.Command = CMD_ERROR;
 	resp.Length = length;
 
-	write(client, &resp, sizeof(PROTOCOL_HEADER));
+	write(client, &resp, PROTOCOL_HEADER_LENGTH);
 	write(client, message, length);
 }
 
@@ -62,7 +68,9 @@ static void serve_client(int client, WorkerContext* context) {
 	PROTOCOL_HEADER req;
 	int n;
 	for (;;) {
-		n = read(client, &req, sizeof(PROTOCOL_HEADER));
+		log_info("Size of Protocol Header is: %d", PROTOCOL_HEADER_LENGTH);
+
+		n = read(client, &req, PROTOCOL_HEADER_LENGTH);
 
 		if (n < 0) {
 			log_error("failed to read data from client: %s",
@@ -71,16 +79,20 @@ static void serve_client(int client, WorkerContext* context) {
 		} else if (n == 0) {
 			break;
 		}
+		log_info("Client requests received. Command=%d, Length=%d, Flags=%d", req.Command, req.Length, req.Flag);
 
 		if (req.Command != CMD_TEST) {
 			send_error(client, "Bad command!", 12);
 			return ;
 		}
 
-		AC_ALPHABET_t text[req.Length];
+		AC_ALPHABET_t text[req.Length+1];
+		text[req.Length] = '\0';
 
 		// TODO: read ...
+		log_info("trying to read %d bytes", req.Length);
 		n = read(client, text, req.Length);
+		log_info("Client sent: %s", text);
 
 		//engine_feed_text(engine, text, n / sizeof(text[0]));
 		engine_feed_text(engine, text, req.Length);

@@ -6,11 +6,14 @@
 #define FILTER_PROTOCOL_H
 
 typedef struct {
-    short Command;
-    int Flag;
-    size_t Length;
+    unsigned char Command;
+    unsigned short Flag;
+    unsigned short Length;
 
 } PROTOCOL_HEADER;
+
+#define PROTOCOL_HEADER_LENGTH 5
+#define MAX_DATA_LENGTH 0xFFFF
 
 enum {
     CMD_NONE,
