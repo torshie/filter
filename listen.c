@@ -72,6 +72,8 @@ static int listen_address(const char* str) {
 	} else {
 		length = sizeof(addr.in);
 		fd = socket(AF_INET, SOCK_STREAM, 0);
+		int one = 1;
+		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 	}
 	if (bind(fd, (struct sockaddr*)&addr, length) != 0) {
 		log_error("failed to bind address %s, %s", str, strerror(errno));

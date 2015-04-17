@@ -60,7 +60,6 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 	signal(SIGUSR1, &store_signum);
-	signal(SIGINT, &store_signum);
 	signal(SIGPIPE, SIG_IGN);
 
 	global.worker =
@@ -80,10 +79,6 @@ int main(int argc, char** argv) {
 
 	while (1) {
 		pause();
-		if (last_signal == SIGINT) {
-			log_warning("Got SIGINT, shutting down.");
-			break;
-		}
 		log_info("Got SIGUSR1, reloading pattern db.");
 		for (int i = 0; i < global.config.thread_count; ++i) {
 			int fd = open(global.config.pattern_db, O_RDONLY);

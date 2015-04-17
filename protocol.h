@@ -5,24 +5,20 @@
 #ifndef FILTER_PROTOCOL_H
 #define FILTER_PROTOCOL_H
 
-
-#define PROTOCOL_HEADER_LENGTH 6
 #define MAX_DATA_LENGTH 0xFFFF
 #define PROTOCOL_VERSION 1
 
-typedef struct {
+typedef struct __attribute__((__packed__)) {
     unsigned char Version;
     unsigned char Command;
     unsigned short Flag;
     unsigned short Length;
-
 } PROTOCOL_HEADER;
 
-typedef struct {
+typedef struct __attribute__((__packed__)) {
     unsigned short StartPos;
     unsigned short Length;
 } RESULT_PAIR;
-#define RESULT_PAIR_LENGTH 4
 
 enum {
     CMD_NONE,
